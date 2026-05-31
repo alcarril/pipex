@@ -119,11 +119,26 @@ Make sure you compiled the project using `make bonus` before running these tests
 ---
 
 Every time `pipex` spawns a process using `fork()`, the operating system kernel creates a tracking structure known as the **Process Control Block (PCB)**. The PCB represents the process in the kernel memory table. It holds critical metadata used by the OS scheduler:
-* **PID (Process Identifier):** A unique numerical ID given to differentiate parent from child.
-* **Process State:** Tracks whether the process is *Running*, *Ready*, or *Waiting* (e.g., waiting for `waitpid` or waiting for pipe data).
-* **CPU Register State:** Saves instruction pointers and stack indicators when context-switching.
-* **Memory Management:** Maps virtual memory pages allocated to that exact execution.
-* **File Descriptor Table:** A private index of integer pointers mapping to open system files or pipe ends.
+
+<table>
+  <tr>
+    <td valign="top" width="60%">
+      <ul>
+        <li><b>PID (Process Identifier):</b> A unique numerical ID given to differentiate parent from child.</li>
+        <li><b>Process State:</b> Tracks whether the process is <i>Running</i>, <i>Ready</i>, or <i>Waiting</i> (e.g., waiting for <code>waitpid</code> or waiting for pipe data).</li>
+        <li><b>CPU Register State:</b> Saves instruction pointers and stack indicators when context-switching.</li>
+        <li><b>Memory Management:</b> Maps virtual memory pages allocated to that exact execution.</li>
+        <li><b>File Descriptor Table:</b> A private index of integer pointers mapping to open system files or pipe ends.</li>
+      </ul>
+    </td>
+    <td valign="top" width="40%" align="center">
+      <img src="img/tabladeprocesos.webp" alt="OS Process Table Diagram" width="100%">
+      <br>
+      <br>
+      <em>Figure 1: Operating System Process Table and PCB Architecture</em>
+    </td>
+  </tr>
+</table>
 
 > ⚠️ **Note on Implementation:** The architecture managed within this repository simulates a **minimal and conceptual version** of a PCB focused on user-space process synchronization. Real kernel-level PCBs contain hundreds of architectural status flags, network tokens, and complex signal-handling bitmasks.
 
@@ -135,17 +150,45 @@ Every time `pipex` spawns a process using `fork()`, the operating system kernel 
 
 When `fork()` is called, the parent process creates a near-identical clone of itself. However, rather than copying entire RAM segments immediately (which would be incredibly slow), modern Unix kernels optimize this via **Copy-on-Write (COW)**.
 
-| Resource Type | Shared or Duplicated? | Behavioral Mechanism |
-| --- | --- | --- |
-| **Memory Space (Stack/Heap)** | **Duplicated (COW)** | Parent and child point to the *same physical RAM pages* initially. If either tries to modify a variable, the kernel catches the write flag, duplicates that exact page, and isolates the modification. Variables are **not** shared synchronously. |
-| **File Descriptors (FDs)** | **Duplicated Reference** | The FD table indices are duplicated into the child's PCB. Crucially, they point to the *same underlying Open File Table entries* in the kernel. Moving a read/write offset in the child affects the parent. |
-| **Environment Variables** | **Duplicated** | The array of context parameters (`envp`) is accurately duplicated, preserving access to configuration blocks. |
 
-<p align="center">
-  <img src="img/process_forking_copyonwrite.webp" alt="Process Fork and Copy on Write Diagram" width="650">
-  <br>
-  <em>Figure 2: Memory Space Duplication via Copy-on-Write (COW) Mechanics</em>
-</p>
+<table>
+  <tr>
+    <td valign="top" width="60%">
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Resource Type</th>
+            <th>Shared or Duplicated?</th>
+            <th>Behavioral Mechanism</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Memory Space (Stack/Heap)</b></td>
+            <td><b>Duplicated (COW)</b></td>
+            <td>Parent and child point to the <em>same physical RAM pages</em> initially. If either tries to modify a variable, the kernel catches the write flag, duplicates that exact page, and isolates the modification. Variables are <b>not</b> shared synchronously.</td>
+          </tr>
+          <tr>
+            <td><b>File Descriptors (FDs)</b></td>
+            <td><b>Duplicated Reference</b></td>
+            <td>The FD table indices are duplicated into the child's PCB. Crucially, they point to the <em>same underlying Open File Table entries</em> in the kernel. Moving a read/write offset in the child affects the parent.</td>
+          </tr>
+          <tr>
+            <td><b>Environment Variables</b></td>
+            <td><b>Duplicated</b></td>
+            <td>The array of context parameters (<code>envp</code>) is accurately duplicated, preserving access to configuration blocks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </td>
+    <td valign="top" width="40%" align="center">
+      <img src="img/process_forking_copyonwrite.webp" alt="Process Fork and Copy on Write Diagram" width="100%">
+      <br>
+      <br>
+      <em>Figure 2: Memory Space Duplication via Copy-on-Write (COW) Mechanics</em>
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -167,66 +210,51 @@ When executing a command string like `"grep test"`, the system cannot run `"grep
 
 <br>
 
-## ⚙️ Practical Process & Pipe Management
+## 🐧 Practical Process & Pipe Management
 
-Managing multiple processes and pipes can easily lead to deadlocks, memory leaks, or hanging terminals if file descriptors (FDs) are not strictly controlled. Below is a highly scannable tactical blueprint of the architectural rules applied in this project:
+If you don't control your file descriptors (FDs) and processes strictly, your program will either leak memory, duplicate data, or hang forever. Here is the no-nonsense breakdown of how the OS handles this under the hood:
 
-### 1. Pipe Anatomy & Kernel Buffering
-* **The Channel:** A pipe is a unidirectional ring buffer managed inside the kernel memory space (typically capped at 64KB).
-    ```text
-    Data Flow:  [Writer] ---> fd[1] (Write) ===[ KERNEL BUFFER ]===> fd[0] (Read) ---> [Reader]
-    ```
-* **Blocking Behavior:** * **Buffer Full:** If a child writes faster than the next can read, the kernel saturates and puts the writer to sleep automatically until space frees up.
-    * **Buffer Empty:** Reading from an empty pipe blocks the consumer process until new data is pushed.
+* **1. Pipe Anatomy (`fd[0]` vs `fd[1]`)**
+  * **How it works:** A pipe is just a 64KB unidirectional buffer in the kernel. `fd[0]` is for reading, `fd[1]` is for writing (think *0 = Input / 1 = Output*).
+  * **The Trap:** If a process writes too fast and fills the 64KB, the kernel blocks it (puts it to sleep) until someone reads. If a process tries to read an empty pipe, it blocks until someone writes.
 
-### 2. Atomic Redirection via `dup2()`
-* **The Mechanics:** `dup2(oldfd, newfd)` forces `newfd` to target the exact same file/stream as `oldfd`. If `newfd` is already open, the kernel safely closes it first in an atomic operation.
-* **Local Scope vs. Master Table:** > [!TIP]
-    > Performing `dup2` redirections *inside the child scope* immediately after `fork()` keeps modifications local. This leaves the parent’s master FD table completely untouched and stable, preventing cross-contamination during subsequent pipeline loops.
+* **2. Redirection with `dup2()`**
+  * **How it works:** `dup2(oldfd, newfd)` clones `oldfd` into `newfd`. If `newfd` was open, the OS closes it automatically before swapping them.
+  * **Best Practice:** Always do your `dup2` redirections **inside the child process** right after `fork()`. This keeps the parent’s FD table clean and prevents the next pipeline loops from reading/writing to the wrong place.
 
-### 3. Execution Sequencing
-* **The Rule:** You must initialize the descriptor array using `pipe()` **prior** to calling `fork()`.
-* **The Blueprint:**
-    ```text
-     CORRECT:  [Parent] -> pipe() -> fork() -> Child inherits SHARED kernel channel.
-   INCORRECT:  [Parent] -> fork() -> pipe() -> Parent & Child get SEPARATE isolated channels.
-    ```
+* **3. The Order of Calls (`pipe` before `fork`)**
+  * **How it works:** You must call `pipe()` **before** `fork()`. 
+  * **Why:** The child only inherits FDs that *already exist* in the parent. If you `fork()` first and then `pipe()`, the parent and the child will create two different, isolated pipes, and they won't be able to talk to each other.
 
-### 4. The Reference Count & Hanging Trap
-* **The Mechanics:** Commands like `grep`, `wc`, or `cat` read continuously until they receive an **EOF (End-of-File)** signal (when `read()` returns 0 bytes).
-* **The Trap:** The kernel tracks a global reference counter for every open FD. The system will **never** trigger an EOF signal on a pipe if even *one* copy of its write end (`fd[1]`) remains open anywhere in any process control block.
+* **4. The Hanging Terminal Trap (Missing EOF)**
+  * **How it works:** Commands like `grep` or `wc` read until they hit an **EOF (End-of-File)** signal (when `read()` returns 0).
+  * **The Trap:** The kernel counts how many copies of `fd[1]` (write end) are open in the entire system. It will **never** send an EOF to a reader if there is still *one* copy of `fd[1]` open anywhere. If your program hangs, you forgot to close a write end in the parent or a sibling process.
 
-> [!WARNING]
-> **The Hanging Symptom:** If the parent process or a sibling forgets to close its copy of `fd[1]`, the reading process will wait indefinitely, freezing your terminal.
+* **5. FD Leaks & Saturation**
+  * **How it works:** The OS limits how many FDs a process can open (usually 1024). If you reach the limit, `open()` or `pipe()` will crash.
+  * **The Fix:** Close early. Inside the child, as soon as you use `dup2()` to redirect standard I/O, `close()` the original pipe FDs immediately. Inside the parent, `close()` its copies of the pipe ends as soon as the children are spawned.
 
-### 5. File Descriptor Table Saturation
-* **The Cap:** Operating systems enforce strict concurrent open file limits per process (e.g., `RLIMIT_NOFILE`, often capped at 1024).
-* **Asymmetric Cleanup:**
-    * **In the Child:** Once `dup2()` replaces `STDIN`/`STDOUT`, the original pipe descriptors become redundant and must be closed immediately.
-    * **In the Parent:** The parent must close its master copies of the pipe ends as soon as it finishes spawning the target children to prevent structural resource leaks.
+* **6. `execve()` Overwrite & FD Survival**
+  * **How it works:** `execve()` is a point of no return. It completely wipes the child's memory (stack, heap, code) and loads the new binary (e.g., `/bin/grep`).
+  * **The Catch:** **Open FDs survive an `execve()` call.** That’s why `grep` can read your pipe automatically. Since any code *after* a successful `execve` is dead, always put your error handling/cleanup macros right below it in case the command fails to execute.
 
-### 6. Memory Overwrites & FD Survival
-* **The Point of No Return:** A successful `execve(path, args, envp)` call completely wipes out the current child process's user-space memory (stack, heap, and code segments), replacing it entirely with the target binary.
-* **FD Persistence:** Open file descriptors **survive an `execve()` call** by default. This allows the newly loaded binary (`grep`, `wc`, etc.) to inherit the pipe ends you set up.
-
-> [!IMPORTANT]
-> Because code located *after* a successful `execve` will never run, error handling and cleanup routines must be placed directly underneath the call to handle rare failure cases (e.g., execution denied).
-
-### 7. Zombie Cleanup via `waitpid`
-* **The Lifecycle:** When a child process completes execution, it doesn't disappear. It enters a **Zombie state**, freeing its RAM footprint but locking its PID and exit status inside the kernel's process table.
-* **The Solution:** The parent process is strictly obligated to reap these dead statuses using `waitpid()`. Neglecting this causes zombie accumulation, which eventually saturates the OS maximum PID table and blocks the creation of any new system processes.
+* **7. Preventing Zombies (`waitpid`)**
+  * **How it works:** When a child dies, it becomes a **Zombie**. Its memory is freed, but its PID and exit code stay locked in the OS kernel table so the parent can read them.
+  * **The Fix:** The parent must clean them up using `waitpid()`. If you don't reap your dead children, the system will run out of PIDs, blocking you (and the OS) from creating any new processes.
 
 <br>
 
 ## ℹ️ Resources
+
+#### 🧠 Notion Workspace
+- [Notion — Procesos & Pipex Master Guide](https://broken-snowdrop-f03.notion.site/Procesos-165b80eb3d88809cb1e4ff3cb634e1fc) — Mi guía completa con toda la teoría detallada sobre File Descriptors (FD), PCB, clonación de procesos y gestión de memoria del Kernel.
+
 #### Processes and Pipes
 - [Video: Unix Processes in C (fork, wait)](https://www.youtube.com/watch?v=cex9XrZCU14)
-- [Video: Simulating the pipe "|" operator in C](https://www.youtube.com/watch?v=6xbLgZpFAcs)
 - `man 2 pipe` & `man 2 fork`
 
 #### File Descriptors and Execution
 - [Video: Redirection using dup2()](https://www.youtube.com/watch?v=5fnVr-zH-SE)
-- [Video: Executing programs with execve()](https://www.youtube.com/watch?v=iq7xIoXidTU)
 - `man 2 dup2` & `man 2 execve`
 
 <br>
