@@ -2,7 +2,9 @@ pipex
 =========
 
 <div align="center">
-	<strong>My implementation of shell pipes and process execution</strong>
+	<strong>My implementation of shell pipes and discovering "cacharreo"</strong>
+	<br />
+	 <strong>Thanks Pepe Segura !</strong>
 	<br />
 	<a href="https://42.fr/">
 		<img src="https://img.shields.io/badge/42-Project-black" alt="42" />
