@@ -1,9 +1,0 @@
-Proceso hijo: PID = 76919, iteración = 0
-Proceso padre: PID = 76918, iteración = 0
-Proceso hijo: PID = 76920, iteración = 1
-Proceso padre: PID = 76918, iteración = 0
-Proceso padre: PID = 76918, iteración = 1
-Proceso hijo: PID = 76921, iteración = 2
-Proceso padre: PID = 76918, iteración = 0
-Proceso padre: PID = 76918, iteración = 1
-Proceso padre: PID = 76918, iteración = 2

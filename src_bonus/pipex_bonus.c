@@ -3,44 +3,34 @@
 /*                                                        :::      ::::::::   */
 /*   pipex_bonus.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alex <alex@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: alejandro <alejandro@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 17:47:53 by alcarril          #+#    #+#             */
-/*   Updated: 2025/03/22 15:01:25 by alex             ###   ########.fr       */
+/*   Updated: 2026/05/31 15:40:42 by alejandro        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex_bonus.h"
 
-//Aqui se maneja la primera entrada de informacion desde el archivo al primer comando y sale por la pipe.
 void	imput_process(t_control *c, int *pipe_p)
 {
 	pid_t		id;
 
-	//creo la pipe en el proceso padre. Siempre se crean el roceso padre para que se puedaaccedere desde
-	//los hijos, que son los que ejecutan los comandos.
 	if (pipe(pipe_p) == -1)
 		ft_error(NULL, NULL, NULL, NULL);
-	//aqui redirecciono las entrada estandar del proceso padre al archivo de entrada. Si el achoivo noexiste, 
-	//se cancela no se ejecuta el comando de la redireccion si no exite. Si existe, se crea un porceso hijo para el primer comando.
 	if (tunel_in_file(c->src_file) != -1)
 	{
-		//fork crea el proceso hijo dupicando el proceso (ver diagramas). A partir de aqui el padre y el hijo
-		//se ejecutan a la vez. LINEA 31 y LINEA 39 se ejecutan "a la vez".
 		id = fork();
 		if (id < 0)
 			ft_error(NULL, c->src_file, NULL, NULL);
 		if (id == 0)
 		{
-			//aqui redirenccion la salida del proces hijo (solo afecta al proceso hijo)
 			pipe_forward(pipe_p, 1, STDOUT_FILENO);
 			search_and_exec(c, c->control - 1);
 		}
 	}
 	else
 		perror(c->src_file);
-	//Esto solo se ejecuta ne el caso de que el Heredoc se ael imput del comando. Creo que esto en MINISHELL
-	//solo se puede dar en el primer comando
 	if (c->control == 4)
 		if (unlink(c->src_file) < 0)
 			ft_error(NULL, NULL, c->src_file, strerror(errno));

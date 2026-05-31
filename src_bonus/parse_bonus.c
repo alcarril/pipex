@@ -3,18 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   parse_bonus.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alex <alex@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: alejandro <alejandro@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/05 14:39:57 by alex              #+#    #+#             */
-/*   Updated: 2025/03/22 15:02:09 by alex             ###   ########.fr       */
+/*   Updated: 2026/05/31 15:40:17 by alejandro        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex_bonus.h"
 
-//esta funcion la podemos utiizar. A partir de la zona marcada emieza el heredoc. Falta hacer pruebas del heredoc
-//en general a ver si fucnion como el de la minishell y saber si se puede ejecutar de mas maneras para el parseo, por ejemp
-//despues de un pipe.
 char	*parse_prompt(char **arg, int argz, int *control, char **env)
 {
 	static char		*l;
@@ -26,7 +23,6 @@ char	*parse_prompt(char **arg, int argz, int *control, char **env)
 		src_name = ft_strdup(arg[1]);
 		return (src_name);
 	}
-	//a partr de aqui es
 	*control = 4;
 	src_name = new_file_name("/tmp/");
 	fd_inter = open(src_name, O_CREAT | O_TRUNC | O_APPEND | O_RDWR, 0664);
@@ -44,9 +40,7 @@ char	*parse_prompt(char **arg, int argz, int *control, char **env)
 	}
 	return (free(l), close (fd_inter), src_name);
 }
-//esta funcion contempla todos los posibles casos del parseo del heredoc. Expanddir variables de entorno,escribir el
-/7smbolo del dollar, o escribir cuaquier otro tipo de caracter. No ejecuta comandos porque no se exige en Minishell.
-//hay qye comprbar si se ha salado algun caso.
+
 void	write_line_in_heredoc(char *line, int fd_inter, char **env)
 {
 	unsigned int	i;
@@ -84,9 +78,7 @@ char	*trim_line(char *line)
 		return (NULL);
 	return (line);
 }
-//esta fucion se puede reultilizar. Maneja el caso en el que nos encntramos un carcter de $ dentro del heredoc
-//hay varias opciones del fucnionmiento ero tengo que revisar si me salte alguna excepccion. por tra parte se podria
-//reutiliza en arte para expandir tambien fuera del heredoc.
+
 unsigned int	write_env(char *line, int fd, unsigned int count, char **env)
 {
 	char		*env_value;
@@ -110,10 +102,7 @@ unsigned int	write_env(char *line, int fd, unsigned int count, char **env)
 	ft_putstr_fd(env_value, fd);
 	return (free(env_name), count - 1);
 }
-//esta funoin sirve para poder crear un archivo en una carpeta, asegurando que le archivo no existiesse antees.
-//El nombre del archivo es un numero que va aumentando. Con esto se controla la correlacion entre rpogramas cuando,
-//usar un archivo a la vez. Sirve para poder ejecutar ds MINISHELL con heredoc sin que este se corrompa, ya que siempre
-//te aseguras de que el archivo no existies en cada proceso antes de crearlo.
+
 char	*new_file_name(char *path)
 {
 	int		name;

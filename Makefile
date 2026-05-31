@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: alcarril <alcarril@student.42.fr>          +#+  +:+       +#+         #
+#    By: alejandro <alejandro@student.42.fr>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/04 21:21:20 by alex              #+#    #+#              #
-#    Updated: 2025/03/27 18:10:21 by alcarril         ###   ########.fr        #
+#    Updated: 2026/05/31 15:35:44 by alejandro        ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,8 +15,8 @@ NAME = pipex
 CC = cc
 CFLAGS = -Wall -Wextra -Werror
 
-SRC_FILE = Src_normal
-SRC_BONUS = Src_bonus
+SRC_FILE = src_normal
+SRC_BONUS = src_bonus
 INCLUDE = Include
 
 SRCS = $(SRC_FILE)/pipex.c $(SRC_FILE)/utils.c $(SRC_FILE)/utils2.c 
@@ -40,8 +40,6 @@ all: $(LIBFT) $(PRINTF) $(NAME)
 	@echo "  / _ \\ | |  | |     / _ \\ | |_) | |_) || || |    "
 	@echo " / ___ \\| |__| |___ / ___ \\|  _ <|  _ < | || |___ "
 	@echo "/_/   \\_\\_____\\____/_/   \\_\\_| \\_\\_| \\_\\___|_____|"
-	@echo " La carpeta predefinida es: $(FILE_NAME). Si quieres cambiarla pon el nombre de la carpeta que contiene al proyecto EJ: make FILE_NAME="nombre de tu carpeta" "
-	@echo " El test predefinido es: $(MAIN). Si quire cambiarlo pon el nombre del archivo que contiene tu main  EJ: MAIN="el test que quieras usar" "
 
 bonus: $(LIBFT) $(PRINTF)
 	$(MAKE) OBJS="$(BONUS_OBJS)" $(NAME)
@@ -50,8 +48,6 @@ bonus: $(LIBFT) $(PRINTF)
 	@echo "  / _ \\ | |  | |     / _ \\ | |_) | |_) || || |    "
 	@echo " / ___ \\| |__| |___ / ___ \\|  _ <|  _ < | || |___ "
 	@echo "/_/   \\_\\_____\\____/_/   \\_\\_| \\_\\_| \\_\\___|_____|"
-	@echo " La carpeta predefinida es: $(FILE_NAME). Si quieres cambiarla pon el nombre de la carpeta que contiene al proyecto EJ: make FILE_NAME="nombre de tu carpeta" "
-	@echo " El test predefinido es: $(MAIN). Si quire cambiarlo pon el nombre del archivo que contiene tu main  EJ: MAIN="el test que quieras usar" "
 
 $(NAME): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -I$(SRC_FILE) -L$(LIBFT_DIR) -lft -L$(PRINFT_DIR) -lftprintf -o $(NAME)

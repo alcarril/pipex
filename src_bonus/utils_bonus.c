@@ -3,16 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   utils_bonus.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: alex <alex@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: alejandro <alejandro@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/04 22:55:05 by alex              #+#    #+#             */
-/*   Updated: 2025/03/26 05:27:58 by alex             ###   ########.fr       */
+/*   Updated: 2026/05/31 15:41:01 by alejandro        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex_bonus.h"
-//esta funcion hay que retocarla para que pueda tener en cuenta los scripsts de .sh. Es cambiar el orden
-//de los access
+
 char	*check_exe(char *x_file, char **env)
 {
 	char	**absolute_paths_table;
