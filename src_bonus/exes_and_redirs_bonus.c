@@ -6,12 +6,19 @@
 /*   By: alejandro <alejandro@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/07 02:56:26 by alex              #+#    #+#             */
-/*   Updated: 2026/05/31 15:40:06 by alejandro        ###   ########.fr       */
+/*   Updated: 2026/05/31 21:29:07 by alejandro        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex_bonus.h"
 
+/**
+ * @brief  Configures the input file by redirecting its content to STDIN.
+ * Verifies file existence and read permissions before opening.
+ * @param  file    Path to the input file (infile).
+ * @return int     The generated file descriptor (fd_trgt) on success; 
+ * -1 if the file doesn't exist, lacks permissions, or dup2 fails.
+ */
 int	tunel_in_file(char *file)
 {
 	int	fd_trgt;
@@ -30,6 +37,13 @@ int	tunel_in_file(char *file)
 	return (fd_trgt);
 }
 
+/**
+ * @brief  Configures the output file (outfile) by truncating it to 0 bytes
+ * and redirecting STDOUT to it. Creates the file if it does not exist.
+ * @param  file    Path to the output file (outfile).
+ * @return int     The generated file descriptor (fd_trgt) on success;
+ * -1 if opening the file or the dup2 redirection fails.
+ */
 int	tunel_out_file(char *file)
 {
 	int	fd_trgt;
@@ -45,6 +59,14 @@ int	tunel_out_file(char *file)
 	return (fd_trgt);
 }
 
+/**
+ * @brief  Redirects a specific end of a pipe to a standard descriptor (STDIN/STDOUT),
+ * ensuring the immediate closure of the opposite, inactive end.
+ * @param  pipe_reference  Integer array containing the two pipe ends (fd[2]).
+ * @param  pipe_port       The end to duplicate (0 for reading, 1 for writing).
+ * @param  fd              The target standard descriptor (STDIN_FILENO / STDOUT_FILENO).
+ * @return void
+ */
 void	pipe_forward(int *pipe_reference, int pipe_port, int fd)
 {
 	int		other_fd;
@@ -62,6 +84,13 @@ void	pipe_forward(int *pipe_reference, int pipe_port, int fd)
 	close(pipe_reference[pipe_port]);
 }
 
+/**
+ * @brief  Performs a total cleanup by safely closing the given pipe 
+ * descriptors (if they exist) along with STDIN, STDOUT, and STDERR.
+ * @param  pipe_ports      Array containing the pipe descriptors to close 
+ * (can be NULL).
+ * @return void
+ */
 void	close_fds(int *pipe_ports)
 {
 	if (pipe_ports)
@@ -74,6 +103,14 @@ void	close_fds(int *pipe_ports)
 	close(STDERR_FILENO);
 }
 
+/**
+ * @brief  Parses a command string at a given index, locates its absolute binary 
+ * using the envp ($PATH) directories, and executes it via execve.
+ * Handles memory freeing and error routines if the command is invalid.
+ * @param  c         Pointer to the main control structure holding environment and args.
+ * @param  position  Index of the target command within the arguments matrix (argv).
+ * @return void      (Does not return on success; exits via exit/ft_error on failure).
+ */
 void	search_and_exec(t_control *c, int position)
 {
 	char	**orders_list;

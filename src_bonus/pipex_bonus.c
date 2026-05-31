@@ -6,12 +6,21 @@
 /*   By: alejandro <alejandro@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/03 17:47:53 by alcarril          #+#    #+#             */
-/*   Updated: 2026/05/31 15:40:42 by alejandro        ###   ########.fr       */
+/*   Updated: 2026/05/31 21:32:23 by alejandro        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex_bonus.h"
 
+/**
+ * @brief  Spawns the entry-point child process of the pipeline. Links the infile 
+ * to STDIN, creates the initial pipe link, and routes the first command execution output forward.
+ * Cleans up here_doc disk footprints via `unlink` if active.
+ *
+ * @param  c       Pointer to the core pipeline control configuration structure.
+ * @param  pipe_p  Array containing the file descriptors for the initial communication pipe.
+ * @return void
+ */
 void	imput_process(t_control *c, int *pipe_p)
 {
 	pid_t		id;
@@ -38,6 +47,15 @@ void	imput_process(t_control *c, int *pipe_p)
 	c->src_file = NULL;
 }
 
+/**
+ * @brief  Drives the intermediate loop stages of a multi-command pipeline. Manages a static 
+ * iteration toggle to latch onto the preceding input, allocates a fresh middle pipe matrix, 
+ * and forks a child process to stitch the stdout-to-stdin cascade seamlessly.
+ *
+ * @param  c           Pointer to the core pipeline control configuration structure.
+ * @param  first_pipe  Pointer to the preceding active pipe descriptor pair.
+ * @return void
+ */
 void	link_pipes(t_control *c, int *first_pipe)
 {
 	static int	iterations_count;
@@ -62,6 +80,15 @@ void	link_pipes(t_control *c, int *first_pipe)
 	close (middle_pipes[1]);
 }
 
+/**
+ * @brief  Spawns the final terminal child process in the pipeline chain, mapping its STDOUT 
+ * to the specified output file. Upon child execution handover, the parent enters a blocking 
+ * loop to reap all active process zombies before triggering complete descriptor sanitation.
+ *
+ * @param  c              Pointer to the core pipeline control configuration structure.
+ * @param  first_pipe_fd  Pointer to the final active pipe descriptor pair feeding the input.
+ * @return void
+ */
 void	output_process(t_control *c, int *first_pipe_fd)
 {
 	pid_t	id;
@@ -90,6 +117,16 @@ void	output_process(t_control *c, int *first_pipe_fd)
 	close_fds(NULL);
 }
 
+/**
+ * @brief  Initializes data offsets, variables, and context references inside the 
+ * core pipeline state wrapper structure.
+ *
+ * @param  c     Pointer to the target control structure instance.
+ * @param  argv  Execution arguments array reference.
+ * @param  argz  Total count of execution arguments.
+ * @param  env   System environment variable array reference.
+ * @return void
+ */
 void	set_control(t_control *c, char **argv, int argz, char **env)
 {
 	if (!c)
@@ -101,6 +138,16 @@ void	set_control(t_control *c, char **argv, int argz, char **env)
 	c->src_file = NULL;
 }
 
+/**
+ * @brief  Execution entry point for the multipipe architecture. Validates setup arguments, 
+ * parses prompt parameters (handling here_doc initialization), and sequences execution states 
+ * through the Input -> Loop Intermediaries -> Output pipeline hierarchy.
+ *
+ * @param  argz  Argument Count.
+ * @param  argv  Argument Vector.
+ * @param  env   Environment Vector.
+ * @return int   Returns 0 upon seamless program resolution; 1 on runtime or parameter validation fault.
+ */
 int	main(int argz, char **argv, char **env)
 {
 	t_control	c;

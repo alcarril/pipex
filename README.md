@@ -114,7 +114,7 @@ Make sure you compiled the project using `make bonus` before running these tests
 
 ## 📖 Some: Core OS Concepts
 
-### 1. The Process Control Block (PCB)
+### The Process Control Block (PCB)
 
 ---
 
@@ -140,11 +140,11 @@ Every time `pipex` spawns a process using `fork()`, the operating system kernel 
   </tr>
 </table>
 
-> ⚠️ **Note on Implementation:** The architecture managed within this repository simulates a **minimal and conceptual version** of a PCB focused on user-space process synchronization. Real kernel-level PCBs contain hundreds of architectural status flags, network tokens, and complex signal-handling bitmasks.
+> **Note on Implementation:** The architecture managed within this repository simulates a **minimal and conceptual version** of a PCB focused on user-space process synchronization. Real kernel-level PCBs contain hundreds of architectural status flags, network tokens, and complex signal-handling bitmasks.
 
 ---
 
-### 2. Process Cloning & Resource Inheritance
+### Process Cloning & Resource Inheritance
 
 ---
 
@@ -168,7 +168,7 @@ When `fork()` is called, the parent process creates a near-identical clone of it
 
 ---
 
-### 3. How Bash Locates Executables & Links `execve`
+### How Bash Locates Executables & Links `execve`
 
 ---
 
@@ -184,7 +184,6 @@ When executing a command string like `"grep test"`, the system cannot run `"grep
 > [!NOTE]
 > 🧠 **Comprehensive Process Documentation:** I have created a detailed Notion workspace covering all these OS concepts, advanced process management mechanics, and everything necessary to successfully build and understand this project from scratch. You can explore the full guide here: [Notion — Procesos & Pipex Guide](https://broken-snowdrop-f03.notion.site/Procesos-165b80eb3d88809cb1e4ff3cb634e1fc?pvs=74).
 
-<br>
 
 ## 🐧 Practical Process & Pipe Management
 
@@ -218,11 +217,10 @@ If you don't control your file descriptors (FDs) and processes strictly, your pr
   * **How it works:** When a child dies, it becomes a **Zombie**. Its memory is freed, but its PID and exit code stay locked in the OS kernel table so the parent can read them.
   * **The Fix:** The parent must clean them up using `waitpid()`. If you don't reap your dead children, the system will run out of PIDs, blocking you (and the OS) from creating any new processes.
 
-<br>
 
 ## ℹ️ Resources
 
-#### 🧠 Notion Workspace
+#### Notion Workspace
 - [Notion — Procesos & Pipex Master Guide](https://broken-snowdrop-f03.notion.site/Procesos-165b80eb3d88809cb1e4ff3cb634e1fc) — Mi guía completa con toda la teoría detallada sobre File Descriptors (FD), PCB, clonación de procesos y gestión de memoria del Kernel.
 
 #### Processes and Pipes

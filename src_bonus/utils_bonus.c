@@ -6,12 +6,22 @@
 /*   By: alejandro <alejandro@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/04 22:55:05 by alex              #+#    #+#             */
-/*   Updated: 2026/05/31 15:41:01 by alejandro        ###   ########.fr       */
+/*   Updated: 2026/05/31 21:33:46 by alejandro        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex_bonus.h"
 
+/**
+ * @brief  Resolves a command string into a valid binary path. 
+ * Skips if prefixed with "./". Queries $PATH env string,
+ * splits it, and evaluates candidate paths.
+ *
+ * @param  x_file  The input command name or string pointer.
+ * @param  env     The environment variables matrix (envp).
+ * @return char* Absolute binary path on success, x_file if 
+ * found locally via access(), or NULL if invalid.
+ */
 char	*check_exe(char *x_file, char **env)
 {
 	char	**absolute_paths_table;
@@ -41,6 +51,15 @@ char	*check_exe(char *x_file, char **env)
 	return (path);
 }
 
+/**
+ * @brief  Searches the environment array for a specific variable
+ * key and returns a pointer to its value segment.
+ *
+ * @param  key_value  The environment variable key name (e.g., "PATH").
+ * @param  env        The environment array matrix (envp).
+ * @return char* Pointer to the value substring within envp matrix,
+ * or NULL if the key is not located.
+ */
 char	*get_env_value(const char *key_value, char **env)
 {
 	int		i;
@@ -69,6 +88,15 @@ char	*get_env_value(const char *key_value, char **env)
 	return (NULL);
 }
 
+/**
+ * @brief  Iterates through possible directory tokens, builds absolute
+ * paths, and tests execution rights via access().
+ *
+ * @param  posible_paths  Split directory path strings array matrix.
+ * @param  x_file         Target command binary name to locate.
+ * @return char* Allocated verified absolute path on success,
+ * or NULL if command is not found.
+ */
 char	*find_exe_file(char **posible_paths, char *x_file)
 {
 	char	*relative_path;
@@ -98,6 +126,17 @@ char	*find_exe_file(char **posible_paths, char *x_file)
 	return (NULL);
 }
 
+/**
+ * @brief  Standard error workflow. Prints diagnostics to STDERR, 
+ * manages custom parameter deallocations safely, clears 
+ * descriptors, and forces termination via exit(1).
+ *
+ * @param  table1   Optional command table array pointer to free.
+ * @param  ptr1     Optional dedicated dynamic string tracker to free.
+ * @param  message  Custom error context message string.
+ * @param  error    System error translation message (strerror).
+ * @return void
+ */
 void	ft_error(char **table1, char *ptr1, char *message, char *error)
 {
 	if (message)
@@ -127,6 +166,13 @@ void	ft_error(char **table1, char *ptr1, char *message, char *error)
 	exit(1);
 }
 
+/**
+ * @brief  Deallocates a null-terminated pointer array matrix 
+ * row by row before freeing the master pointer block.
+ *
+ * @param  ptr  Pointer to the double char matrix array to clear.
+ * @return void
+ */
 void	ft_free_table(char **ptr)
 {
 	int	i;
