@@ -20,22 +20,22 @@ pipex
 ![pipex](img/pipes.jpeg)
 
 ## 💡 Overview
-This project explores multiprocessing and inter-process communication in C. The goal is to recreate the behavior of the shell pipe operator (`|`) and file redirections (`<` and `>`). By building `pipex`, I learned how to create child processes, redirect standard input/output, and safely execute terminal commands from within a C program.
+This project explores **multiprocessing** and **inter-process communication (IPC)** in C. The goal is to recreate the exact behavior of the **shell pipe operator (`|`)** and **file redirections (`<` and `>`)**. By building `pipex`, I learned how to **create child processes**, **redirect standard input/output**, and **safely execute terminal commands** from within a C program.
 
 ## ✨ Key Features
 
 ### Core Functionality
-- Process Control Block (PCB) management and understanding of OS-level process tracking.
-- Multiprocessing and process synchronization using `fork` (for creating child processes) and `waitpid` (to wait for child processes to finish).
-- Resource inheritance (such as open file descriptors and environment variables) between parent and child processes.
-- Inter-process communication (IPC) via `pipe`.
-- File descriptor manipulation and standard I/O redirection using `dup2`.
-- Parsing environment variables (like `$PATH`) to locate and run executables with `execve` (the system call that replaces the current process image with a new one).
-- Robust error handling for invalid files, command execution failures, and memory leaks.
+- **Process Control Block (PCB) management** and a deep understanding of **OS-level process tracking**.
+- **Multiprocessing and process synchronization** using `fork` (for **child process creation**) and `waitpid` (to **synchronize execution** and prevent zombie processes).
+- **Resource inheritance**, mastering how **open file descriptors** and **environment variables** are passed between parent and child processes.
+- **Inter-process communication (IPC)** natively managed via `pipe`.
+- **File descriptor manipulation** and **standard I/O redirection** using the `dup2` system call.
+- **Parsing environment variables** (specifically the `$PATH` matrix) to locate and run executables with `execve` (**overwriting the current process image** with a new binary).
+- **Robust error handling** system designed to handle invalid files, command execution failures, and **memory leaks**.
 
 ### Bonus Features
-- **Multipipes:** Capability to handle an indeterminate number of commands, dynamically linking the output of one into the input of the next (`cmd1 | cmd2 | ... | cmdn`).
-- **Here_doc (`<<`):** Support for the `here_doc` shell feature. This is implemented by storing the user's standard input into a temporary file created inside the `/tmp` directory, which is safely unlinked (deleted) at the end of its use to ensure no leftover files.
+- **Multipipes:** Capability to handle an **indeterminate number of commands**, dynamically linking the output of one into the input of the next (`cmd1 | cmd2 | ... | cmdn`) using a **pipeline loop**.
+- **Here_doc (`<<`):** Full support for the `here_doc` shell feature. This is implemented by storing the user's standard input into a **temporary file** created inside the `/tmp` directory, which is **safely unlinked (deleted)** at the end of its use to ensure **zero leftover files** on the system.
 
 <br>
 
@@ -67,7 +67,7 @@ make bonus  # Builds with multipipes and here_doc support
 
 ## ▶️ Run & Test
 
-### 1. Standard Execution
+### Standard Execution
 ---
 The program takes exactly 4 arguments: two file names and two shell commands.
 
@@ -88,27 +88,27 @@ The program takes exactly 4 arguments: two file names and two shell commands.
 echo -e "Hello 42\nThis is a pipex test\nAnother line" > infile
 ./pipex infile "grep test" "wc -w" outfile
 cat outfile
+# The result in outfile will perfectly match the output of running < infile grep test | wc -w > outfile in your regular terminal.
 ```
-*The result in `outfile` will perfectly match the output of running `< infile grep test | wc -w > outfile` in your regular terminal.*
 
 ---
 
-### 2. Bonus Execution
+### Bonus Execution
 
 ---
 Make sure you compiled the project using `make bonus` before running these tests.
 
 * **Multipipes:** Dynamically links an indeterminate number of commands consecutively.
-```bash
-./pipex infile "ls -l" "grep pipex" "wc -l" outfile
-```
-*Equivalent to:* `< infile ls -l | grep pipex | wc -l > outfile`
+	```bash
+	./pipex infile "ls -l" "grep pipex" "wc -l" outfile
+	# *Equivalent to:* `< infile ls -l | grep pipex | wc -l > outfile`
+	```
 
 * **Here_doc:** Replicates the `<<` shell operator, reading input until the specified limiter is reached.
-```bash
-./pipex here_doc LIMITER "grep test" "wc -w" outfile
-```
-*Equivalent to:* `grep test << LIMITER | wc -w > outfile`
+	```bash
+	./pipex here_doc LIMITER "grep test" "wc -w" outfile
+	# *Equivalent to:* `grep test << LIMITER | wc -w > outfile`
+	```
 
 <br>
 
@@ -233,7 +233,6 @@ If you don't control your file descriptors (FDs) and processes strictly, your pr
 - [Video: Redirection using dup2()](https://www.youtube.com/watch?v=5fnVr-zH-SE)
 - `man 2 dup2` & `man 2 execve`
 
-<br>
 
 ## 👨‍💻 Author
 **Alejandro Carrillo** - https://github.com/alcarril
