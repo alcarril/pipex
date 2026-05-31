@@ -150,45 +150,21 @@ Every time `pipex` spawns a process using `fork()`, the operating system kernel 
 
 When `fork()` is called, the parent process creates a near-identical clone of itself. However, rather than copying entire RAM segments immediately (which would be incredibly slow), modern Unix kernels optimize this via **Copy-on-Write (COW)**.
 
+| Resource Type | Shared or Duplicated? | Behavioral Mechanism |
+| --- | --- | --- |
+| **Memory Space (Stack/Heap)** | **Duplicated (COW)** | Parent and child point to the *same physical RAM pages* initially. If either tries to modify a variable, the kernel catches the write flag, duplicates that exact page, and isolates the modification. Variables are **not** shared synchronously. |
+| **File Descriptors (FDs)** | **Duplicated Reference** | The FD table indices are duplicated into the child's PCB. Crucially, they point to the *same underlying Open File Table entries* in the kernel. Moving a read/write offset in the child affects the parent. |
+| **Environment Variables** | **Duplicated** | The array of context parameters (`envp`) is accurately duplicated, preserving access to configuration blocks. |
 
-<table>
-  <tr>
-    <td valign="top" width="60%">
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Resource Type</th>
-            <th>Shared or Duplicated?</th>
-            <th>Behavioral Mechanism</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><b>Memory Space (Stack/Heap)</b></td>
-            <td><b>Duplicated (COW)</b></td>
-            <td>Parent and child point to the <em>same physical RAM pages</em> initially. If either tries to modify a variable, the kernel catches the write flag, duplicates that exact page, and isolates the modification. Variables are <b>not</b> shared synchronously.</td>
-          </tr>
-          <tr>
-            <td><b>File Descriptors (FDs)</b></td>
-            <td><b>Duplicated Reference</b></td>
-            <td>The FD table indices are duplicated into the child's PCB. Crucially, they point to the <em>same underlying Open File Table entries</em> in the kernel. Moving a read/write offset in the child affects the parent.</td>
-          </tr>
-          <tr>
-            <td><b>Environment Variables</b></td>
-            <td><b>Duplicated</b></td>
-            <td>The array of context parameters (<code>envp</code>) is accurately duplicated, preserving access to configuration blocks.</td>
-          </tr>
-        </tbody>
-      </table>
-    </td>
-    <td valign="top" width="40%" align="center">
-      <img src="img/process_forking_copyonwrite.webp" alt="Process Fork and Copy on Write Diagram" width="100%">
-      <br>
-      <br>
-      <em>Figure 2: Memory Space Duplication via Copy-on-Write (COW) Mechanics</em>
-    </td>
-  </tr>
-</table>
+<br>
+
+<p align="center">
+  <em>Figure 2: Memory Space Duplication via Copy-on-Write (COW) Mechanics</em>
+  <img src="img/process_forking_copyonwrite.webp" alt="Process Fork and Copy on Write Diagram" width="80%">
+  <br>
+</p>
+
+
 
 ---
 
